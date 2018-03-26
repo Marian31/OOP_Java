@@ -3,58 +3,65 @@ import java.util.LinkedList;
 
 public class Application {
 
- public static double parse (String rpnString) {
-        String res = "";
-        boolean f = true;
-        for (char el : rpnString.toCharArray()) {
-            if (el == '.' && f) {
-                res+=el;
-                f = false;
-                continue;
-            }else if (Character.isDigit(el)) {
-                res+=el;
-                continue;
-            }throw new RPNParserException();
-        }
-        return Double.parseDouble(res);
-    }
+	private final static String DELIM = " ";
 
-    public static void main(String[] args) {
-        if (args == null || args.length == 0 || args[0] == null)
-            throw new RPNParserException();
+	public static double parse(String rpnString) {
+		if (rpnString == null || rpnString.isEmpty()) {
+			throw new RPNParserException();
+		}
+		Deque<Double> stek = new LinkedList<Double>();
+		String[] result = rpnString.split(DELIM);
+		for (int i = 0; i < result.length; i++) {
+			if (isNumber(result[i])) {
+				stek.push(new Double(result[i]));
+			} else if (isOperator(result[i])) {
+				if (stek.size() < 2) {
+					throw new RPNParserException();
+				}
+				switch (result[i]) {
+				case "+":
+					stek.push(new Double(stek.pop() + stek.pop()));
+					break;
+				case "-":
+					stek.push(new Double(-stek.pop() + stek.pop()));
+					break;
+				case "/":
+					if(stek.peek() == 0){
+						throw new ArithmeticException();
+					}
+						stek.push(new Double(1/stek.pop() * stek.pop()));
+					break;
+				case "*":
+					stek.push(new Double(stek.pop() * stek.pop()));
+					break;
+				}
+			} else {
+				throw new RPNParserException();
+			}
+		}
+		if (stek.size() != 1) {
+			throw new RPNParserException();
+		}
+		return stek.pop();
+	}
 
-        String[] input = args[0].split(" ");
-        LinkedList<Double> steck = new LinkedList<Double>();
-        try {
-            for (String str : input) {
-                if(str.equals("+"))
-                    steck.push((steck.pop()+steck.pop()));
-                else if(str.equals("*"))
-                    steck.push(steck.pop()*steck.pop());
-                else if(str.equals("-")) {
-                    double a = steck.pop();
-                    double b = steck.pop();
-                    steck.push(b - a);
-                }else if(str.equals("/")) {
-                    double a = steck.pop();
-                    double b =steck.pop();
-                    steck.push(b / a);
-                }else
-                    steck.push(parse(str));
-            }
-        }catch (ArithmeticException ex){
-            throw new ArithmeticException();
-        }catch (Exception e) {
-            throw new RPNParserException();
-        }
-        if (steck.size() > 1)
-            throw new RPNParserException();
+	private static boolean isNumber(String string) {
+		if (string == null)
+			return false;
+		return string.matches("^-?\\d+(\\.\\d+)?$");
+	}
 
-        Double result = steck.pop();
-        if (result.isNaN() || result.isInfinite())//
-            throw new ArithmeticException();
+	private static boolean isOperator(String string) {
+		if (string == null)
+			return false;
+		return string.matches("[+-/*]{1}");
+	}
 
-        int intresult = result.intValue();
-        System.out.println(intresult);
-    }
+	public static void main(String[] args) {
+		
+		if (args == null || args.length == 0) {
+			throw new RPNParserException();
+		}
+		System.out.println(parse(args[0]));
+	}
 }
